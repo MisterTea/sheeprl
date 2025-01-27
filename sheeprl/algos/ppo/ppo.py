@@ -284,6 +284,7 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
 
                     # Single environment step
                     obs, rewards, terminated, truncated, info = envs.step(real_actions.reshape(envs.action_space.shape))
+                    rewards = rewards.astype(np.float32)
                     truncated_envs = np.nonzero(truncated)[0]
                     if len(truncated_envs) > 0:
                         real_next_obs = {

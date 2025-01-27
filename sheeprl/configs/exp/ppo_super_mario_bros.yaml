@@ -9,15 +9,18 @@ defaults:
 # Environment
 env:
   num_envs: 8
+  frame_stack: 1
+  screen_size: 224
 
 # Algorithm
 algo:
   # total_steps: 524288
   # total_steps: 262144
-  total_steps: 1048576
-  # total_steps: 2097152
+  #total_steps: 1048576
+  total_steps: 2097152
   max_grad_norm: 0.5
-  per_rank_batch_size: 256
+  #per_rank_batch_size: 256
+  per_rank_batch_size: 32
   rollout_steps: 2048
   dense_units: 64
   encoder:

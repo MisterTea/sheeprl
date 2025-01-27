@@ -12,7 +12,7 @@ from lightning import Fabric
 from torch import Tensor
 from torch.distributions import Distribution, Independent, Normal, OneHotCategorical
 
-from sheeprl.models.models import MLP, MultiEncoder, NatureCNN
+from sheeprl.models.models import MLP, VIT, MultiEncoder, NatureCNN
 from sheeprl.utils.fabric import get_single_device_fabric
 from sheeprl.utils.utils import safeatanh, safetanh
 
@@ -29,7 +29,9 @@ class CNNEncoder(nn.Module):
         self.keys = keys
         self.input_dim = (in_channels, screen_size, screen_size)
         self.output_dim = features_dim
-        self.model = NatureCNN(in_channels=in_channels, features_dim=features_dim, screen_size=screen_size)
+        # self.model = NatureCNN(in_channels=in_channels, features_dim=features_dim, screen_size=screen_size)
+        assert screen_size == 224, f"{screen_size}"
+        self.model = VIT(in_channels=in_channels, features_dim=features_dim)
 
     def forward(self, obs: Dict[str, Tensor]) -> Tensor:
         x = torch.cat([obs[k] for k in self.keys], dim=-3)

@@ -6,6 +6,7 @@ import warnings
 from math import prod
 from typing import Any, Callable, Dict, Optional, Sequence, Union, no_type_check
 
+import timm
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -117,6 +118,39 @@ class MLP(nn.Module):
         if self.flatten_dim is not None:
             obs = obs.flatten(self.flatten_dim)
         return self.model(obs)
+
+
+got_vit = False
+
+
+class VIT(nn.Module):
+    def __init__(self, in_channels: int, features_dim: int):
+        super().__init__()
+        global got_vit
+        if got_vit:
+            raise ValueError("Somehow creating two VITs")
+        got_vit = True
+        assert in_channels % 3 == 0, f"VIT only supports multiples of 3 channels input, not {in_channels}"
+
+        self.stack_size = in_channels // 3
+
+        self.trunk = timm.create_model("vit_tiny_patch16_224", pretrained=True, num_classes=0)
+        self.fc = nn.Sequential(nn.Linear(self.trunk.num_features * self.stack_size, features_dim), nn.LeakyReLU())
+        self._output_dim = features_dim
+
+    @property
+    def output_dim(self) -> int:
+        return self.features_dim
+
+    @no_type_check
+    def forward(self, obs: Tensor) -> Tensor:
+        batch_size = obs.shape[0]
+        assert obs.shape[1] == 3 * self.stack_size, obs.shape
+        assert obs.shape[2] == 224, f"{obs.shape}"
+        assert obs.shape[3] == 224, f"{obs.shape}"
+        obs = obs.reshape(batch_size * self.stack_size, 3, 224, 224)
+        trunk_output = self.trunk(obs).reshape(batch_size, self.trunk.num_features * self.stack_size)
+        return self.fc(trunk_output)
 
 
 class CNN(nn.Module):
