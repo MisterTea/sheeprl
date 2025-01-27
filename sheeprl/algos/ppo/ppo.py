@@ -276,6 +276,7 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
                         fabric, next_obs, cnn_keys=cfg.algo.cnn_keys.encoder, num_envs=cfg.env.num_envs
                     )
                     actions, logprobs, values = player(torch_obs)
+                    del torch_obs
                     if is_continuous:
                         real_actions = torch.stack(actions, -1).cpu().numpy()
                     else:
@@ -299,10 +300,15 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
                         for i, truncated_env in enumerate(truncated_envs):
                             for k, v in info["final_observation"][truncated_env].items():
                                 torch_v = torch.as_tensor(v, dtype=torch.float32, device=device)
+                                print("***")
+                                print(torch_v.shape)
                                 if k in cfg.algo.cnn_keys.encoder:
+                                    print(k, cfg.algo.cnn_keys.encoder, v.shape)
                                     torch_v = torch_v.view(-1, *v.shape[-2:])
                                     torch_v = torch_v / 255.0 - 0.5
-                                real_next_obs[k][i] = torch_v
+                                print(torch_v.shape)
+                                print(real_next_obs[k].shape)
+                                real_next_obs[k][i] = torch_v.reshape(real_next_obs[k].shape[1:])
                         vals = player.get_values(real_next_obs).cpu().numpy()
                         rewards[truncated_envs] += cfg.algo.gamma * vals.reshape(rewards[truncated_envs].shape)
                     dones = np.logical_or(terminated, truncated).reshape(cfg.env.num_envs, -1).astype(np.uint8)
@@ -348,6 +354,7 @@ def main(fabric: Fabric, cfg: Dict[str, Any]):
         with torch.inference_mode():
             torch_obs = prepare_obs(fabric, obs, cnn_keys=cfg.algo.cnn_keys.encoder, num_envs=cfg.env.num_envs)
             next_values = player.get_values(torch_obs)
+            del torch_obs
             returns, advantages = gae(
                 local_data["rewards"],
                 local_data["values"],

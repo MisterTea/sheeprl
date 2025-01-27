@@ -145,9 +145,17 @@ class VIT(nn.Module):
     @no_type_check
     def forward(self, obs: Tensor) -> Tensor:
         batch_size = obs.shape[0]
-        assert obs.shape[1] == 3 * self.stack_size, obs.shape
-        assert obs.shape[2] == 224, f"{obs.shape}"
-        assert obs.shape[3] == 224, f"{obs.shape}"
+        if len(obs.shape) == 5:
+            assert obs.shape[1] == self.stack_size, obs.shape
+            assert obs.shape[2] == 3, f"{obs.shape}"
+            assert obs.shape[3] == 224, f"{obs.shape}"
+            assert obs.shape[4] == 224, f"{obs.shape}"
+        elif len(obs.shape) == 4:
+            assert obs.shape[1] == self.stack_size * 3, obs.shape
+            assert obs.shape[2] == 224, f"{obs.shape}"
+            assert obs.shape[3] == 224, f"{obs.shape}"
+        else:
+            assert False, obs.shape
         obs = obs.reshape(batch_size * self.stack_size, 3, 224, 224)
         trunk_output = self.trunk(obs).reshape(batch_size, self.trunk.num_features * self.stack_size)
         return self.fc(trunk_output)

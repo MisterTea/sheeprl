@@ -6,7 +6,7 @@ defaults:
 id: SuperMarioBros-v0
 frame_stack: 1
 sync_env: False
-action_repeat: 1
+action_repeat: 4
 
 # Wrapper to be instantiated
 wrapper:
